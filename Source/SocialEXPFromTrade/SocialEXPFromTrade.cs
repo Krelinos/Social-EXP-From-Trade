@@ -40,97 +40,107 @@ namespace SocialEXPFromTrade
             {
                 0f,     // Value of goods player is buying, in market value.
                 0f,     // Value of goods player is selling, in actual selling value.
-                false   // Is pawn inspired for this trade?
+                false,  // Is pawn inspired for this trade?
+                false   // Ignore this trade (because it was a Royal Tribute Collector trade)
             };
 
-            foreach (Tradeable aTradeable in ___tradeables)
-            {
-                // Since silver currency is technically being traded over, it is getting
-                // counted for the experience gain, resulting in double the expected output.
-                if ( aTradeable.ThingDef.defName == "Silver" ) // Silver not Sliver
-                    continue;
-
-                float xpToAdd = 0f;
-                if (aTradeable.ActionToDo == TradeAction.PlayerBuys)
-                {
-                    switch ( Settings.BuyingDeterminer )
-                    {
-                        case Settings.ValueDeterminer.MarketValue:
-                            xpToAdd = aTradeable.AnyThing.MarketValue;
-                            break;
-                        case Settings.ValueDeterminer.RelativeValue:
-                            xpToAdd = aTradeable.GetPriceFor( TradeAction.PlayerBuys );
-                            break;
-                        case Settings.ValueDeterminer.HigherValue:
-                            xpToAdd = Math.Max( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerBuys ) );
-                            break;
-                        case Settings.ValueDeterminer.LowerValue:
-                            xpToAdd = Math.Min( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerBuys ) );
-                            break;
-                    }
-
-                    //Log.Message( String.Format( "Player bought {0} {1} ({3}) at {2} silver each." ) );
-                        //Math.Abs( aTradeable.CountToTransfer ), aTradeable.Label, xpToAdd, aTradeable.ThingDef ) );
-
-                    xpToAdd *= Math.Abs(aTradeable.CountToTransfer);
-                    __state[0] = (float)__state[0] + xpToAdd;
-                }
-                else if (aTradeable.ActionToDo == TradeAction.PlayerSells)
-                {
-                    switch (Settings.SellingDeterminer)
-                    {
-                        case Settings.ValueDeterminer.MarketValue:
-                            xpToAdd = aTradeable.AnyThing.MarketValue;
-                            break;
-                        case Settings.ValueDeterminer.RelativeValue:
-                            xpToAdd = aTradeable.GetPriceFor( TradeAction.PlayerSells );
-                            break;
-                        case Settings.ValueDeterminer.HigherValue:
-                            xpToAdd = Math.Max( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerSells ) );
-                            break;
-                        case Settings.ValueDeterminer.LowerValue:
-                            xpToAdd = Math.Min( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerSells ) );
-                            break;
-                    }
-
-                    //Log.Message( String.Format( "Player sold {0} {1} ({3}) at {2} silver each..",
-                    //    Math.Abs( aTradeable.CountToTransfer ), aTradeable.ThingDef, xpToAdd, aTradeable.ThingDef ) );
-
-                    xpToAdd *= Math.Abs( aTradeable.CountToTransfer );
-                    __state[1] = (float)__state[1] + xpToAdd;
-                }
-            }
-
-            if ( TradeSession.playerNegotiator.mindState.inspirationHandler.CurStateDef == InspirationDefOf.Inspired_Trade)
-            {
+            if ( TradeSession.playerNegotiator.mindState.inspirationHandler.CurStateDef == InspirationDefOf.Inspired_Trade )
                 __state[2] = true;
+
+            if ( TradeSession.TradeCurrency == TradeCurrency.Favor )
+            {
+                //Log.Message( "Ignoring tribute trade." );
+                __state[3] = true;
             }
+            else if ( TradeSession.TradeCurrency == TradeCurrency.Silver )
+                foreach ( Tradeable aTradeable in ___tradeables )
+                {
+                    // Since silver currency is technically being traded over, it is getting
+                    // counted for the experience gain, resulting in double the expected output.
+                    if ( aTradeable.ThingDef.defName == "Silver" ) // Silver not Sliver
+                        continue;
+
+                    float xpToAdd = 0f;
+                    if (aTradeable.ActionToDo == TradeAction.PlayerBuys)
+                    {
+                        switch ( Settings.BuyingDeterminer )
+                        {
+                            case Settings.ValueDeterminer.MarketValue:
+                                xpToAdd = aTradeable.AnyThing.MarketValue;
+                                break;
+                            case Settings.ValueDeterminer.RelativeValue:
+                                xpToAdd = aTradeable.GetPriceFor( TradeAction.PlayerBuys );
+                                break;
+                            case Settings.ValueDeterminer.HigherValue:
+                                xpToAdd = Math.Max( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerBuys ) );
+                                break;
+                            case Settings.ValueDeterminer.LowerValue:
+                                xpToAdd = Math.Min( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerBuys ) );
+                                break;
+                        }
+
+                        //Log.Message( String.Format( "Player bought {0} {1} ({3}) at {2} silver each." ) );
+                            //Math.Abs( aTradeable.CountToTransfer ), aTradeable.Label, xpToAdd, aTradeable.ThingDef ) );
+
+                        xpToAdd *= Math.Abs(aTradeable.CountToTransfer);
+                        __state[0] = (float)__state[0] + xpToAdd;
+                    }
+                    else if (aTradeable.ActionToDo == TradeAction.PlayerSells)
+                    {
+                        switch (Settings.SellingDeterminer)
+                        {
+                            case Settings.ValueDeterminer.MarketValue:
+                                xpToAdd = aTradeable.AnyThing.MarketValue;
+                                break;
+                            case Settings.ValueDeterminer.RelativeValue:
+                                xpToAdd = aTradeable.GetPriceFor( TradeAction.PlayerSells );
+                                break;
+                            case Settings.ValueDeterminer.HigherValue:
+                                xpToAdd = Math.Max( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerSells ) );
+                                break;
+                            case Settings.ValueDeterminer.LowerValue:
+                                xpToAdd = Math.Min( aTradeable.AnyThing.MarketValue, aTradeable.GetPriceFor( TradeAction.PlayerSells ) );
+                                break;
+                        }
+
+                        //Log.Message( String.Format( "Player sold {0} {1} ({3}) at {2} silver each..",
+                        //    Math.Abs( aTradeable.CountToTransfer ), aTradeable.ThingDef, xpToAdd, aTradeable.ThingDef ) );
+
+                        xpToAdd *= Math.Abs( aTradeable.CountToTransfer );
+                        __state[1] = (float)__state[1] + xpToAdd;
+                    }
+                }
         }
         static void Postfix( object[] __state, ref bool __result )
         {
             if (__result)
             {
-                Pawn playerNegotiator = TradeSession.playerNegotiator;
-                float playerXP = (float)__state[0] + (float)__state[1];
-                playerXP *= Settings.GlobalMultiplier;
-
-                if( (bool)__state[2] == true )
+                if ( (bool)__state[3] == true )
+                    ; // Nothing, since a Tribute Collector trade involves no negotiation.
+                else
                 {
-                    playerXP *= Settings.InspiredMultiplier;
+                    Pawn playerNegotiator = TradeSession.playerNegotiator;
+                    float playerXP = (float)__state[0] + (float)__state[1];
+                    playerXP *= Settings.GlobalMultiplier;
+
+                    if ( (bool)__state[2] == true )
+                    {
+                        playerXP *= Settings.InspiredMultiplier;
+                    }
+
+                    //int levelBeforeTrade = playerNegotiator.skills.GetSkill(SkillDefOf.Social).Level;
+
+                    if ( PawnUtility.ShouldSendNotificationAbout( playerNegotiator ) && Settings.NotifyPlayer )
+                    {
+                        Messages.Message( String.Format( "{0} has received {1} social experience from this trade.", playerNegotiator.LabelShort, Math.Round( playerXP, 0 ) ), playerNegotiator, MessageTypeDefOf.PositiveEvent, true );
+                    }
+
+                    playerNegotiator.skills.Learn( SkillDefOf.Social, playerXP, false );
+
+                    //int levelAfterTrade = playerNegotiator.skills.GetSkill(SkillDefOf.Social).Level;
+
+                    //Log.Message(String.Format("{0} has received {1} social experience from this trade. Is inspired? {2}", playerNegotiator.Name, playerXP, __state[2]));
                 }
-
-                //int levelBeforeTrade = playerNegotiator.skills.GetSkill(SkillDefOf.Social).Level;
-
-                if ( PawnUtility.ShouldSendNotificationAbout( playerNegotiator ) && Settings.NotifyPlayer )
-                {
-                    Messages.Message( String.Format( "{0} has received {1} social experience from this trade.", playerNegotiator.LabelShort, Math.Round(playerXP, 0) ), playerNegotiator, MessageTypeDefOf.PositiveEvent, true );
-                }
-
-                playerNegotiator.skills.Learn(SkillDefOf.Social, playerXP, false);
-
-                //int levelAfterTrade = playerNegotiator.skills.GetSkill(SkillDefOf.Social).Level;
-
-                //Log.Message(String.Format("{0} has received {1} social experience from this trade. Is inspired? {2}", playerNegotiator.Name, playerXP, __state[2]));
             }
         }
     }
