@@ -1,4 +1,5 @@
-# Social-EXP-From-Trade
+This mod requires Harmony.
+
 # Overview
 In RimWorld, every skill gains experience when it is practiced. Every skill, except social when trading (and stonecutting but that mod exists already).
 
