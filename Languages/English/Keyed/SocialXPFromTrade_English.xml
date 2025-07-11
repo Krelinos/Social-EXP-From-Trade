@@ -16,10 +16,13 @@
 	<SocialEXPFromTrade.HigherValue>Which ever of the two is higher</SocialEXPFromTrade.HigherValue>
 	<SocialEXPFromTrade.LowerValue>Which ever of the two is lower</SocialEXPFromTrade.LowerValue>
 	
-	<SocialEXPFromTrade.InspirationMultiplier>If the character has Inspired Trade, multiply experience by x{0} (default is x1.2)</SocialEXPFromTrade.InspirationMultiplier>
-	<SocialEXPFromTrade.GlobalMultiplier>Multiply all trade experience by x{0} (default is x2.0)</SocialEXPFromTrade.GlobalMultiplier>
+	<SocialEXPFromTrade.InspirationMultiplier>If the character has Inspired Trade, multiply experience by x{0} (default is x1.0)</SocialEXPFromTrade.InspirationMultiplier>
+	<SocialEXPFromTrade.GlobalMultiplier>Multiply all trade experience by x{0} (default is x1.0)</SocialEXPFromTrade.GlobalMultiplier>
+	<SocialEXPFromTrade.BuyingMultiplier>Multiply buying experience by x{0} (default is x1.0)</SocialEXPFromTrade.BuyingMultiplier>
+	<SocialEXPFromTrade.SellingMultiplier>Multiply selling experience by x{0} (default is x1.0)</SocialEXPFromTrade.SellingMultiplier>
 	
 	<SocialEXPFromTrade.NotifyPlayer>Send a message at the top left about experience gain?</SocialEXPFromTrade.NotifyPlayer>
+	<SocialEXPFromTrade.Notification>{0} has gained {1} social experience from this trade.</SocialEXPFromTrade.Notification>
 	
 	<SocialEXPFromTrade.Default>(default)</SocialEXPFromTrade.Default>
 </LanguageData>

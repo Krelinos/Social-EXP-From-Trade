@@ -49,7 +49,7 @@ namespace SocialEXPFromTrade
 
             if ( TradeSession.TradeCurrency == TradeCurrency.Favor )
             {
-                //Log.Message( "Ignoring tribute trade." );
+                //Log.Message( "Ignoring tribute trade. (Prefix)" );
                 __state[3] = true;
             }
             else if ( TradeSession.TradeCurrency == TradeCurrency.Silver )
@@ -115,13 +115,10 @@ namespace SocialEXPFromTrade
         {
             if (__result)
             {
-                if ( (bool)__state[3] == true )
-                    ; // Nothing, since a Tribute Collector trade involves no negotiation.
-                else
+                if ( (bool)__state[3] == false )
                 {
                     Pawn playerNegotiator = TradeSession.playerNegotiator;
-                    float playerXP = (float)__state[0] + (float)__state[1];
-                    playerXP *= Settings.GlobalMultiplier;
+                    float playerXP = (float)__state[0] * Settings.BuyingMultiplier + (float)__state[1] * Settings.SellingMultiplier;
 
                     if ( (bool)__state[2] == true )
                     {
@@ -132,7 +129,8 @@ namespace SocialEXPFromTrade
 
                     if ( PawnUtility.ShouldSendNotificationAbout( playerNegotiator ) && Settings.NotifyPlayer )
                     {
-                        Messages.Message( String.Format( "{0} has received {1} social experience from this trade.", playerNegotiator.LabelShort, Math.Round( playerXP, 0 ) ), playerNegotiator, MessageTypeDefOf.PositiveEvent, true );
+                        var xpActual = playerXP * playerNegotiator.skills.GetSkill(SkillDefOf.Social).LearnRateFactor();
+                        Messages.Message( String.Format( "SocialEXPFromTrade.Notification".Translate(), playerNegotiator.LabelShort, Math.Round( xpActual, 0 ) ), playerNegotiator, MessageTypeDefOf.PositiveEvent, true );
                     }
 
                     playerNegotiator.skills.Learn( SkillDefOf.Social, playerXP, false );
@@ -161,18 +159,24 @@ namespace SocialEXPFromTrade
         public static ValueDeterminer BuyingDeterminer = ValueDeterminer.MarketValue;
         public static ValueDeterminer SellingDeterminer = ValueDeterminer.RelativeValue;
 
-        public static float InspiredMultiplier = 1.2f;
-        public static float GlobalMultiplier = 2f;
+        public static float InspiredMultiplier = 1f;
+        public static float GlobalMultiplier = 1f;
+        public static float BuyingMultiplier = 1f;
+        public static float SellingMultiplier = 1f;
 
         public static bool NotifyPlayer = true;
+
+        public static string Version = "1.1";
 
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Values.Look( ref BuyingDeterminer, "SocialEXPFromTrade_BuyingDeterminer", ValueDeterminer.MarketValue );
             Scribe_Values.Look( ref SellingDeterminer, "SocialEXPFromTrade_SellingDeterminer", ValueDeterminer.RelativeValue );
-            Scribe_Values.Look( ref InspiredMultiplier, "SocialEXPFromTrade_InspiredMultiplier", 1.2f );
-            Scribe_Values.Look( ref GlobalMultiplier, "SocialEXPFromTrade_GlobalMultiplier", 2f );
+            Scribe_Values.Look( ref InspiredMultiplier, "SocialEXPFromTrade_InspiredMultiplier", 1f );
+            Scribe_Values.Look( ref GlobalMultiplier, "SocialEXPFromTrade_GlobalMultiplier", 1f );  // Deprecated, but keeping so people's existing global multiplier translate to buy and sell multipliers.
+            Scribe_Values.Look( ref BuyingMultiplier, "SocialEXPFromTrade_BuyingMultiplier", GlobalMultiplier );
+            Scribe_Values.Look( ref SellingMultiplier, "SocialEXPFromTrade_SellingMultiplier", GlobalMultiplier );
             Scribe_Values.Look( ref NotifyPlayer, "SocialEXPFromTrade_NotifyPlayer", true );
         }
 
@@ -202,12 +206,12 @@ namespace SocialEXPFromTrade
             Text.Font = GameFont.Small;
             if (listing.RadioButton( "　" + "SocialEXPFromTrade.HigherValue".Translate(), BuyingDeterminer == ValueDeterminer.HigherValue ))
                 BuyingDeterminer = ValueDeterminer.HigherValue;
-            listing.Label( "" );
+            //listing.Label( "" );
 
             if (listing.RadioButton( "　" + "SocialEXPFromTrade.LowerValue".Translate(), BuyingDeterminer == ValueDeterminer.LowerValue ))
                 BuyingDeterminer = ValueDeterminer.LowerValue;
 
-            listing.Gap( 24 );
+            listing.Gap( 12 );
 
             ////// SELLING
 
@@ -229,12 +233,12 @@ namespace SocialEXPFromTrade
             Text.Font = GameFont.Small;
             if (listing.RadioButton( "　" + "SocialEXPFromTrade.HigherValue".Translate(), SellingDeterminer == ValueDeterminer.HigherValue ))
                 SellingDeterminer = ValueDeterminer.HigherValue;
-            listing.Label( "" );
+            //listing.Label( "" );
 
             if (listing.RadioButton( "　" + "SocialEXPFromTrade.LowerValue".Translate(), SellingDeterminer == ValueDeterminer.LowerValue ))
                 SellingDeterminer = ValueDeterminer.LowerValue;
 
-            listing.Gap( 24 );
+            listing.Gap( 12 );
 
             ////// MULTIPLIERS
 
@@ -243,10 +247,13 @@ namespace SocialEXPFromTrade
             listing.Label( String.Format( "SocialEXPFromTrade.InspirationMultiplier".Translate(), InspiredMultiplier ) );
             InspiredMultiplier = listing.Slider( (float)Math.Round( InspiredMultiplier, 1 ), 0f, 10f );
 
-            listing.Label( String.Format( "SocialEXPFromTrade.GlobalMultiplier".Translate(), GlobalMultiplier ) );
-            GlobalMultiplier = listing.Slider( (float)Math.Round( GlobalMultiplier, 1 ), 0f, 10f );
+            listing.Label( String.Format( "SocialEXPFromTrade.BuyingMultiplier".Translate(), BuyingMultiplier ) );
+            BuyingMultiplier = listing.Slider( (float)Math.Round( BuyingMultiplier, 1 ), 0f, 10f );
+            
+            listing.Label( String.Format( "SocialEXPFromTrade.SellingMultiplier".Translate(), SellingMultiplier ) );
+            SellingMultiplier = listing.Slider( (float)Math.Round( SellingMultiplier, 1 ), 0f, 10f );
 
-            listing.Gap( 24 );
+            listing.Gap( 12 );
 
             listing.CheckboxLabeled( "SocialEXPFromTrade.NotifyPlayer".Translate(), ref NotifyPlayer );
             listing.End();
