@@ -23,3 +23,5 @@ Sure.
 
 Steam Version
 https://steamcommunity.com/sharedfiles/filedetails/?id=3400608063
+
+No generative AI was used in the creation of this mod in any way.
