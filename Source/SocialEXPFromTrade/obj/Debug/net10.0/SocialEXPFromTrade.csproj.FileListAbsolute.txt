@@ -1,0 +1,11 @@
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Assemblies\net10.0\SocialEXPFromTrade.deps.json
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Assemblies\net10.0\SocialEXPFromTrade.dll
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEXPFromTrade.csproj.AssemblyReference.cache
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEXPFromTrade.GeneratedMSBuildEditorConfig.editorconfig
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEXPFromTrade.AssemblyInfoInputs.cache
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEXPFromTrade.AssemblyInfo.cs
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEXPFromTrade.csproj.CoreCompileInputs.cache
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEXPFromTrade.dll
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\refint\SocialEXPFromTrade.dll
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\ref\SocialEXPFromTrade.dll
+D:\SteamLibrary\steamapps\common\RimWorld\Mods\SocialEXPFromTrade\Source\SocialEXPFromTrade\obj\Debug\net10.0\SocialEX.EC66D038.Up2Date

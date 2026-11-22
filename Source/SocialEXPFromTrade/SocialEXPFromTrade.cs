@@ -11,12 +11,17 @@ namespace SocialEXPFromTrade
 {
     class SocialEXPFromTrade : Mod
     {
+        //private readonly bool isMadSkillsLoaded;
+
         public SocialEXPFromTrade( ModContentPack pack ) : base( pack )
         {
             GetSettings<Settings>();
 
             var harmony = new Harmony("krelinos.SocialEXPFromTrade");
-            harmony.PatchAll( Assembly.GetExecutingAssembly() );
+            //harmony.PatchAll( Assembly.GetExecutingAssembly() );
+            harmony.PatchAll( typeof( SocialEXPFromTrade ).Assembly );
+
+            //isMadSkillsLoaded = ModLister.AnyModActiveNoSuffix( ["ratys.madskills", "cedaro.madskillsplus"] );
         }
 
         public override void DoSettingsWindowContents( Rect inRect )
@@ -32,7 +37,7 @@ namespace SocialEXPFromTrade
 
     [HarmonyPatch(typeof(TradeDeal))]
     [HarmonyPatch("TryExecute")]
-    public class Patch1
+    public class AddSocialExperiencePoints
     {
         static void Prefix( ref TradeDeal __instance, ref List<Tradeable> ___tradeables, ref object[] __state )
         {
@@ -118,22 +123,83 @@ namespace SocialEXPFromTrade
                 if ( (bool)__state[3] == false )
                 {
                     Pawn playerNegotiator = TradeSession.playerNegotiator;
-                    float playerXP = (float)__state[0] * Settings.BuyingMultiplier + (float)__state[1] * Settings.SellingMultiplier;
+                    float xpRaw = (float)__state[0] * Settings.BuyingMultiplier + (float)__state[1] * Settings.SellingMultiplier;
 
                     if ( (bool)__state[2] == true )
                     {
-                        playerXP *= Settings.InspiredMultiplier;
+                        xpRaw *= Settings.InspiredMultiplier;
+                    }
+
+                    float xpActual = 0;
+
+                    // If I just do one "Learn" function, the skill gain acts like a skilltrainer and ignores the 4000 xp limit.
+                    // Therefore, the experience gain needs to be manually separated into "before limit" and "after limit" groups.
+                    if ( Settings.RespectDailyLearningLimit )
+                    {
+                        float pawnDailyLearnAmount =  playerNegotiator.skills.GetSkill(SkillDefOf.Social).xpSinceMidnight;
+                        int pawnDailyLearnLimit = SkillRecord.MaxFullRateXpPerDay;
+                        float pawnLearnRate = playerNegotiator.skills.GetSkill(SkillDefOf.Social).LearnRateFactor(false);
+
+                        if ( pawnDailyLearnAmount < pawnDailyLearnLimit )
+                        {
+                            float learnDifference = pawnDailyLearnLimit - pawnDailyLearnAmount;
+                            float xpRequiredToReachMaxLimit = learnDifference / pawnLearnRate;
+
+                            float xpUnsaturated = Math.Min( xpRequiredToReachMaxLimit, xpRaw );
+
+                            //playerNegotiator.skills.Learn( SkillDefOf.Social, xpUnsaturated, false );
+
+                            xpRaw -= xpUnsaturated;
+                            xpActual += xpUnsaturated * pawnLearnRate;
+
+                            playerNegotiator.skills.Learn( SkillDefOf.Social, xpUnsaturated, false );
+
+                            //Log.Message( String.Format( "learnDifference: {0} | xpToReachLimit: {1} | unsaturated: {2} | xpRaw: {3}",
+                            //    learnDifference,
+                            //    xpRequiredToReachMaxLimit,
+                            //    xpUnsaturated,
+                            //    xpRaw
+                            //    ) );
+
+                            if (xpRaw > 0)    // The rest gets added as "saturated" / over limit experience.
+                            {
+                                float xpSaturated = xpRaw / 5;
+                                xpActual += xpSaturated * pawnLearnRate;
+
+                                playerNegotiator.skills.Learn( SkillDefOf.Social, xpSaturated, false );
+                            }
+                        }
+                        else
+                        {
+                            playerNegotiator.skills.Learn( SkillDefOf.Social, xpRaw, false );
+                            xpActual += xpRaw * pawnLearnRate;
+                        }
+                    }
+                    else
+                    {
+                        xpActual += xpRaw * playerNegotiator.skills.GetSkill( SkillDefOf.Social ).LearnRateFactor( false );
+
+                        if ( playerNegotiator.skills.GetSkill( SkillDefOf.Social ).LearningSaturatedToday )
+                        {
+                            // Since the negotiator is already saturated on Social experience, I need to reverse the 20% penalty.
+                            // And I can't just use the "direct" flag in the "Learn" function, because for some reason, it
+                            // ignores Global Learning Factor (like the Slow/Fast Learner traits) and I don't like that.
+                            xpActual *= 5;
+                            playerNegotiator.skills.Learn( SkillDefOf.Social, xpRaw * 5, false );
+                        }
+                        else
+                        {
+                            playerNegotiator.skills.Learn( SkillDefOf.Social, xpRaw, false );
+                        }
                     }
 
                     //int levelBeforeTrade = playerNegotiator.skills.GetSkill(SkillDefOf.Social).Level;
 
                     if ( PawnUtility.ShouldSendNotificationAbout( playerNegotiator ) && Settings.NotifyPlayer )
                     {
-                        var xpActual = playerXP * playerNegotiator.skills.GetSkill(SkillDefOf.Social).LearnRateFactor();
+                        //var xpActual = xpRaw * playerNegotiator.skills.GetSkill(SkillDefOf.Social).LearnRateFactor();
                         Messages.Message( String.Format( "SocialEXPFromTrade.Notification".Translate(), playerNegotiator.LabelShort, Math.Round( xpActual, 0 ) ), playerNegotiator, MessageTypeDefOf.PositiveEvent, true );
                     }
-
-                    playerNegotiator.skills.Learn( SkillDefOf.Social, playerXP, false );
 
                     //int levelAfterTrade = playerNegotiator.skills.GetSkill(SkillDefOf.Social).Level;
 
@@ -164,19 +230,19 @@ namespace SocialEXPFromTrade
         public static float BuyingMultiplier = 1f;
         public static float SellingMultiplier = 1f;
 
+        public static bool RespectDailyLearningLimit = true;
         public static bool NotifyPlayer = true;
-
-        public static string Version = "1.1";
 
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Values.Look( ref BuyingDeterminer, "SocialEXPFromTrade_BuyingDeterminer", ValueDeterminer.MarketValue );
-            Scribe_Values.Look( ref SellingDeterminer, "SocialEXPFromTrade_SellingDeterminer", ValueDeterminer.RelativeValue );
+            Scribe_Values.Look( ref SellingDeterminer, "SocialEXPFromTrade_SellingDeterminer", ValueDeterminer.MarketValue );
             Scribe_Values.Look( ref InspiredMultiplier, "SocialEXPFromTrade_InspiredMultiplier", 1f );
             Scribe_Values.Look( ref GlobalMultiplier, "SocialEXPFromTrade_GlobalMultiplier", 1f );  // Deprecated, but keeping so people's existing global multiplier translate to buy and sell multipliers.
             Scribe_Values.Look( ref BuyingMultiplier, "SocialEXPFromTrade_BuyingMultiplier", GlobalMultiplier );
             Scribe_Values.Look( ref SellingMultiplier, "SocialEXPFromTrade_SellingMultiplier", GlobalMultiplier );
+            Scribe_Values.Look( ref RespectDailyLearningLimit, "SocialEXPFromTrade_RespectDailyLearningLimit", true );
             Scribe_Values.Look( ref NotifyPlayer, "SocialEXPFromTrade_NotifyPlayer", true );
         }
 
@@ -217,14 +283,14 @@ namespace SocialEXPFromTrade
 
             Text.Font = GameFont.Small;
             listing.Label( "SocialEXPFromTrade.SellingDeterminer".Translate() );
-            if (listing.RadioButton( "　" + "SocialEXPFromTrade.MarketValue".Translate(), SellingDeterminer == ValueDeterminer.MarketValue ))
+            if (listing.RadioButton( "　" + "SocialEXPFromTrade.MarketValue".Translate() + " " + "SocialEXPFromTrade.Default".Translate(), SellingDeterminer == ValueDeterminer.MarketValue ))
                 SellingDeterminer = ValueDeterminer.MarketValue;
 
             Text.Font = GameFont.Tiny;
             listing.Label( "　　　<color=grey>" + "SocialEXPFromTrade.MarketValueDescription".Translate() + "</color>" );
 
             Text.Font = GameFont.Small;
-            if (listing.RadioButton( "　" + "SocialEXPFromTrade.RelativeValue".Translate() + " " + "SocialEXPFromTrade.Default".Translate(), SellingDeterminer == ValueDeterminer.RelativeValue ))
+            if (listing.RadioButton( "　" + "SocialEXPFromTrade.RelativeValue".Translate(), SellingDeterminer == ValueDeterminer.RelativeValue ))
                 SellingDeterminer = ValueDeterminer.RelativeValue;
 
             Text.Font = GameFont.Tiny;
@@ -253,8 +319,9 @@ namespace SocialEXPFromTrade
             listing.Label( String.Format( "SocialEXPFromTrade.SellingMultiplier".Translate(), SellingMultiplier ) );
             SellingMultiplier = listing.Slider( (float)Math.Round( SellingMultiplier, 1 ), 0f, 10f );
 
-            listing.Gap( 12 );
+            listing.Gap( 8 );
 
+            listing.CheckboxLabeled( "SocialEXPFromTrade.RespectDailyLearnLimit".Translate(), ref RespectDailyLearningLimit );
             listing.CheckboxLabeled( "SocialEXPFromTrade.NotifyPlayer".Translate(), ref NotifyPlayer );
             listing.End();
         }

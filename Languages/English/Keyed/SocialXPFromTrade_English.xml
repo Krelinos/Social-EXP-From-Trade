@@ -25,4 +25,5 @@
 	<SocialEXPFromTrade.Notification>{0} has gained {1} social experience from this trade.</SocialEXPFromTrade.Notification>
 	
 	<SocialEXPFromTrade.Default>(default)</SocialEXPFromTrade.Default>
+	<SocialEXPFromTrade.RespectDailyLearnLimit>Should experience gain be affected by the daily 4000 learn limit?</SocialEXPFromTrade.RespectDailyLearnLimit>
 </LanguageData>
